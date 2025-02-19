@@ -60,10 +60,9 @@ class Build : NukeBuild
         Console.WriteLine($"Running on Azure: {IsRunningOnAzure}");
         Console.WriteLine($"Branch is: {AzurePipelines.Instance.SourceBranchName}");
 
-        if (IsRunningOnAzure)
+        if (IsRunningOnAzure && int.TryParse(AzurePipelines.Instance.SourceBranchName, out int minor))
         {
             // Always use branch name as minor part of version (must be an integer, i.e. complete naming release/2)
-            var minor = int.Parse(AzurePipelines.Instance.SourceBranchName);
             var currentVersion = new Version(Version);
             var gruntVersion = new Version(currentVersion.Major, minor, currentVersion.Build, currentVersion.Revision);
 
