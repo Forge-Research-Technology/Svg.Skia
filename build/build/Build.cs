@@ -7,6 +7,9 @@ using Nuke.Common.IO;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using Nuke.Common.CI.AzurePipelines;
+using System;
+using Nuke.Common.Tools.GitVersion;
 
 class Build : NukeBuild
 {
@@ -23,6 +26,10 @@ class Build : NukeBuild
 
     [Parameter("version-suffix")]
     public string VersionSuffix { get; set; }
+
+    public bool IsRunningOnAzure { get; set; }
+
+    public string Version { get; set; }
 
     [Parameter("publish-framework")]
     public string PublishFramework { get; set; }
@@ -46,6 +53,22 @@ class Build : NukeBuild
     {
         Configuration = Configuration ?? "Release";
         VersionSuffix = VersionSuffix ?? "";
+        Version = Solution.GetProject("Svg.Skia").GetProperty("Version");
+        IsRunningOnAzure = Host is AzurePipelines || Environment.GetEnvironmentVariable("LOGNAME") == "vsts";
+
+        Console.WriteLine($"Version is: {Version}");
+        Console.WriteLine($"Running on Azure: {IsRunningOnAzure}");
+
+        if (IsRunningOnAzure && AzurePipelines.Instance.SourceBranchName.Contains("release"))
+        {
+            // Always use branch name as minor part of version (must be an integer, i.e. complete naming release/2)
+            var minor = int.Parse(AzurePipelines.Instance.SourceBranchName);
+            var currentVersion = new Version(Version);
+            var gruntVersion = new Version(currentVersion.Major, minor, currentVersion.Build, currentVersion.Revision);
+
+            Console.WriteLine($"Grunt Version is: {gruntVersion}");
+            Version = gruntVersion.ToString();
+        }
     }
 
     private void DeleteDirectories(IReadOnlyCollection<string> directories)
@@ -79,6 +102,7 @@ class Build : NukeBuild
             DotNetBuild(s => s
                 .SetProjectFile(Solution)
                 .SetConfiguration(Configuration)
+                .SetVersion(Version)
                 .SetVersionSuffix(VersionSuffix)
                 .EnableNoRestore());
         });
@@ -103,6 +127,7 @@ class Build : NukeBuild
             DotNetPack(s => s
                 .SetProject(Solution)
                 .SetConfiguration(Configuration)
+                .SetVersion(Version)
                 .SetVersionSuffix(VersionSuffix)
                 .SetOutputDirectory(ArtifactsDirectory / "NuGet")
                 .EnableNoBuild()
@@ -119,6 +144,7 @@ class Build : NukeBuild
             DotNetPublish(s => s
                 .SetProject(Solution.GetProject(PublishProject))
                 .SetConfiguration(Configuration)
+                .SetVersion(Version)
                 .SetVersionSuffix(VersionSuffix)
                 .SetFramework(PublishFramework)
                 .SetRuntime(PublishRuntime)
