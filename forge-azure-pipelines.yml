@@ -61,4 +61,4 @@ jobs:
           command: 'push'
           packagesToPush: '$(Build.SourcesDirectory)/artifacts/nuget/*.nupkg'
           nuGetFeedType: 'internal'
-          publishVstsFeed: 'a0b0aaaa-c5cc-43c6-af3e-60bcbbc1f245'
+          publishVstsFeed: 'Libraries/forge-libs'

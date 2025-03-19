@@ -64,10 +64,10 @@ class Build : NukeBuild
         {
             // Always use branch name as minor part of version (must be an integer, i.e. complete naming release/2)
             var currentVersion = new Version(Version);
-            var gruntVersion = new Version(currentVersion.Major, minor, currentVersion.Build, currentVersion.Revision);
+            var forgeVersion = new Version(currentVersion.Major, minor, currentVersion.Build, currentVersion.Revision);
 
-            Console.WriteLine($"Grunt Version is: {gruntVersion}");
-            Version = gruntVersion.ToString();
+            Console.WriteLine($"Grunt Version is: {forgeVersion}");
+            Version = forgeVersion.ToString();
         }
     }
 
